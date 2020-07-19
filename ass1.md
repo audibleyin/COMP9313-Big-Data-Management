@@ -4,7 +4,7 @@ Written by Chen Wu
 ID: z5244467
 ------------------
 
-# Q1. HDFS 
-## L<sub>i</sub>(K,N) 
+## Q1. HDFS 
+### L<sub>i</sub>(K,N) 
    
 
