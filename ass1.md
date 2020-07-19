@@ -1,0 +1,1 @@
+L<sub>i</sub>(K,N)
