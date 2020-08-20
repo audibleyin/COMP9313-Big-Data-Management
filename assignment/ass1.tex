@@ -1,0 +1,105 @@
+\documentclass{article}
+
+\usepackage{ctex}
+% Recommended packages:
+\usepackage{listings} % used for listing code
+
+\usepackage{graphicx} % used for importing graphics
+
+
+% Suggested packages:
+\usepackage{tikz} % used for drawing figures in LaTeX directly
+\usetikzlibrary{automata,calc,arrows} % some useful default tikz packages
+
+\usepackage{enumerate} % used for finer control over enumerate lists
+
+\usepackage{algorithm} % used for specifying algorithms
+\usepackage{algpseudocode} % ditto (you need both)
+
+\usepackage{fullpage} % reduces a page's margins to 1cm instead of 1in
+
+\usepackage{mathpazo} % better? fonts
+
+\usepackage{hyperref} % hyperlinks: compile with pdflatex for best results
+\begin{document}
+\title{	COMP9313 \ Assignment1}
+\author{ Chen Wu\\ ID:\ z5244467}
+
+\maketitle % to actually insert the above three items
+\section*{Question 1: HDFS}
+\subsection*{Part (1)}
+\begin{itemize}
+\item [1)] When using Wayne to draw each part, it is very clear that different numbers of datanodes and files failded. According to the figure area, the following formula can be obtained
+\item L$_{1}$(k,N) = k$\cdot$B - 2$\cdot$L$_{2}$(k,N) - 3$\cdot$L$_{3}$(k,N) - 4$\cdot$L$_{4}$(k,N) - 5$\cdot$L$_{5}$(k,N)
+
+\item [2)] L$_{2}$(k,N) 
+R represents the number of all replications
+\item [a.]If k - 1 dataNodes failed and lost one replication: 4$\cdot$L$_{1}$(k-1,N)/(N-k+1)
+\item [b.] If k - 1 dataNodes failed and have lost two replications:  L$_{2}$(k - 1,N)
+\item [c.] based on [b], if k-1 have lost tow replications, another replication lost: 3$\cdot$L$_{2}$(k - 1,N)/(N - k + 1)
+\item Therefore, the result can be acquired:
+\item [*] L$_{2}$(k,N) = 4$\cdot$L$_{1}$(k - 1,N)/(N - k + 1) + L$_{2}$(k - 1,N) - 3$\cdot$L$_{2}$(k - 1,N)/(N - k + 1)
+\item similarly 
+\item [*] L$_{3}$(k,N) = 3$\cdot$L$_{2}$(k - 1,N)/(N - k + 1) + L$_{3}$(k - 1,N) - 2$\cdot$L$_{3}$(k - 1,N)/(N - k + 1)
+\item [*] L$_{4}$(k,N) = 2$\cdot$L$_{3}$(k - 1,N)/(N - k + 1) + L$_{4}$(k - 1,N) - L$_{4}$(k - 1,N)/(N - k + 1)
+\item [*] L$_{5}$(k,N) = L$_{4}$(k - 1,N)/(N - k + 1) + L$_{5}$(k - 1,N)
+
+\subsection*{Part (2)}
+\lstset{language=python}
+\begin{lstlisting}
+def update(l,k,table):
+    # according to the rule which is found in question 1
+	if l == 1:
+		table[l][k] = k * B -2 * table[2][k] - 3 *
+		table[3][k] - 4 * table[4][k] - 5 * table[5][k]
+		return
+	
+	table[l][k] = ((6 - l) * table[l - 1][k - 1]) / (N - k + 1) 
+	+ table[l][k - 1] - ((6 - l - 1) * table[l][k - 1]) / (N - k + 1)
+	return
+R,N,K= 20000000, 500, 200
+B = R / N
+table = [[0 for _ in range(201)] for _ in range(6)]
+table[0][0]=B
+tmp = [5,4,3,2,1]
+for k in range(201):
+	for l in tmp:
+		update(l, k, table)
+print(table[5][200])
+\end{lstlisting}
+Therefore, the final result is 39736.7728
+\section*{Question 2: Spark}
+\subsection*{Part (1)}
+The step rdd\verb|_|2 is to select name and score from raw\verb|_|data;\\
+rdd\verb|_|3: Use the name as the key value to find the corresponding max score\\
+rdd\verb|_|4: Use the name as the key value to find the corresponding min score\\
+rdd\verb|_|5 is to merge the max and min score by same key\\
+rdd\verb|_|6 is to add the max and min score\\
+The output: [(Tina,155),(Jimmy,159),(Thomas,167),(Joseph,165)]
+
+\subsection*{Part (2)}
+The number of stage is 3.\\
+stage0: rdd\verb|_|1 rdd\verb|_|2 \\
+stage1: rdd\verb|_|1 rdd\verb|_|2 \\
+stage2: the rest of rdd\\
+As we known, when a wide dependency is encountered, it is disconnected and divided into a stage; when a narrow dependency is encountered, the RDD is added to the stage. In this question, at first rdd\verb|_|1 and rdd\verb|_|2 was be created in stage0. Secondly, rdd\verb|_|1 and rdd\verb|_|2 was be created in stage1. Then reduceByKey belongs to wide dependency, which number is two. The remaining operations belong to another stage. So The number of stage  should be three. Because rdd\verb|_|3 and rdd\verb|_|4 have same dataframe, join() here does not belong to wide dependency.
+\subsection*{Part (3)}
+It is clear that the times of using shuffle need to be reduce.\\
+rdd\verb|_|1 = sc.parallelize(raw\verb|_|data)\\
+rdd\verb|_|2 = rdd\verb|_|1.map(lambda x:(x[0], x[2]))\\
+rdd\verb|_|3 = rdd\verb|_|2.combineByKey(lambda x : [x], lambda y, x : y + [x], lambda y1, y2 : y1 + y2)\\
+rdd\verb|_|4 = rdd\verb|_|3.map(lambda x: (x[0], max(x[1]) + min(x[1])))\\
+rdd\verb|_|4.collect()
+
+\section*{Question 3: LSH}
+\subsection*{Part (1)}
+From cos($\theta$(o,q))$\geq$0.9, we have that $\theta$< arccos(0.9)$\approx$25.842$^\circ$. \\
+According to SimHash, we have that Pr[h$_{i}$(o)=h$_{i}$(q)].\\ Thus, P$_{q,o}$=Pr[h$_{i}$(o)=h$_{i}$(q)]1-$\theta$/$\phi$ > 0.856.\\
+Simultaneously, the probability of find any near duplicate is 1 - (1-P$^{k}_{q,o}$)$^{l}$
+Therefore, we can get 1-(1-0.856$^5$)$^{l}$$\geq$0.99, and the result is L$\geq$8
+\subsection*{Part (2)}
+As we known, false positive means that some Data should not become a candidate which is selected.\\
+Since cos($\theta$(o,q))$\leq$0.8, this means that it is not a near duplicate. In order to become a false positive of query q, it is necessary that image o to be the candidate. Therefore, we can get $\theta$>36.8699$^\circ$ and P$_{q,o}$=Pr[h$_{i}$(o)=h$_{i}$(q)]1-$\theta$/$\phi$ < 0.796\\
+Thus, we can get 1 - (1-P$^{k}_{q,o}$)$^{l}$ = 1-(1-0.795$^5$)$^{l}$$\leq$0.9782=97.82%
+\end{itemize}
+\end{document}
